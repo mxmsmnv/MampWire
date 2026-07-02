@@ -36,11 +36,11 @@ Bootstrap MySQL user: root
 Bootstrap MySQL password: root
 ProcessWire database user: same value as the generated database name unless the user provides one
 ProcessWire database password: generated letters and digits only unless the user provides one
-Apache ports: read from /Library/Application Support/appsolute/MAMP PRO/conf/httpd.conf and httpd-ssl.conf, or the matching files in ~/Library/Application Support/appsolute/MAMP PRO/
-Nginx ports: read from /Library/Application Support/appsolute/MAMP PRO/conf/nginx.conf or ~/Library/Application Support/appsolute/MAMP PRO/nginx.conf when those generated files exist
+Apache ports/domains: read from /Library/Application Support/appsolute/MAMP PRO/conf/httpd.conf and httpd-ssl.conf, or the matching files in ~/Library/Application Support/appsolute/MAMP PRO/
+Nginx ports/domains: read from /Library/Application Support/appsolute/MAMP PRO/conf/nginx.conf or ~/Library/Application Support/appsolute/MAMP PRO/nginx.conf when those generated files exist
 ProcessWire branch: dev
 Site profile: site-blank
-Admin user: same value as the generated database name unless the user provides one
+Admin user: same value as the generated admin path unless the user provides one
 Admin path: exactly one generated Irish given name unless the user provides one
 Generated passwords: lowercase letters, uppercase letters, and digits only
 ```
@@ -70,14 +70,13 @@ The installer will try to infer the domain from the generated MAMP Pro Apache/Ng
 MAMP Pro generated config files are the source of truth after the user starts or restarts servers. Use them instead of guessing ports:
 
 ```txt
-Apache HTTP: /Library/Application Support/appsolute/MAMP PRO/conf/httpd.conf
-Apache HTTPS: /Library/Application Support/appsolute/MAMP PRO/conf/httpd-ssl.conf
-Nginx: /Library/Application Support/appsolute/MAMP PRO/conf/nginx.conf
+Apache HTTP: /Library/Application Support/appsolute/MAMP PRO/conf/httpd.conf or ~/Library/Application Support/appsolute/MAMP PRO/httpd.conf
+Apache HTTPS: /Library/Application Support/appsolute/MAMP PRO/conf/httpd-ssl.conf or ~/Library/Application Support/appsolute/MAMP PRO/httpd-ssl.conf
+Nginx: /Library/Application Support/appsolute/MAMP PRO/conf/nginx.conf or ~/Library/Application Support/appsolute/MAMP PRO/nginx.conf
 MySQL: /Applications/MAMP/tmp/mysql/my.cnf
-User copies may also exist under ~/Library/Application Support/appsolute/MAMP PRO/
 ```
 
-The generated ProcessWire admin path must be one Irish given name only, with no random suffix and no separator. Examples: `aine`, `niamh`, `ronan`.
+The generated ProcessWire admin path must be one Irish given name only, with no random suffix and no separator. The default admin login must be the same value as this path. Examples: path `orla` with login `orla`, path `niamh` with login `niamh`.
 
 Use the bootstrap MySQL user only to create the database and dedicated database user. Do not install ProcessWire with `root/root` database credentials unless the user explicitly asks. The ProcessWire config should use the dedicated database user and generated database password.
 

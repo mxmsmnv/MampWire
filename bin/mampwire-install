@@ -36,7 +36,7 @@ Options:
   --mysql-pass PASS      Default: root
   --db-user USER         ProcessWire database user. Default: same as database name.
   --db-pass PASS         ProcessWire database password. Default: generated.
-  --admin-user USER      Default: same as database name
+  --admin-user USER      Default: same as generated admin path
   --admin-email EMAIL    Default: admin@DOMAIN
   --admin-path PATH      Admin URL segment. Default: one generated Irish name
   --root PATH            Site document root. Default: current folder.
@@ -226,7 +226,9 @@ infer_domain_from_mamp() {
 
   local configs=(
     "/Library/Application Support/appsolute/MAMP PRO/conf/httpd.conf"
+    "$HOME/Library/Application Support/appsolute/MAMP PRO/httpd.conf"
     "/Library/Application Support/appsolute/MAMP PRO/conf/nginx.conf"
+    "$HOME/Library/Application Support/appsolute/MAMP PRO/nginx.conf"
   )
 
   local config
@@ -377,10 +379,10 @@ if [ -z "$DB_NAME" ]; then
   DB_NAME="$(sanitize_db_name "$DOMAIN")"
 fi
 
-ADMIN_USER="${ADMIN_USER:-$DB_NAME}"
 DB_USER="${DB_USER:-$DB_NAME}"
 DB_PASS="${DB_PASS:-$(random_password 32)}"
 ADMIN_PATH="${ADMIN_PATH:-$(generate_irish_admin_path)}"
+ADMIN_USER="${ADMIN_USER:-$ADMIN_PATH}"
 
 if ! printf '%s' "$DB_NAME" | grep -Eq '^[A-Za-z0-9_]+$'; then
   fail "Database name may contain only letters, numbers, and underscores."

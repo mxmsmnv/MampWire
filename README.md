@@ -11,7 +11,7 @@ It assumes you create the MAMP Pro site/domain manually, then let Codex or anoth
 - Downloads and extracts ProcessWire.
 - Runs the ProcessWire CLI installer.
 - Saves local admin/database credentials to `.local/admin.md`.
-- Uses the same generated value for the local admin login and database name by default.
+- Uses the same Irish name for the local admin path and admin login by default.
 - Creates a dedicated database user for the site instead of installing ProcessWire as `root`.
 - Generates passwords with letters and digits only.
 - Generates the admin path as one Irish given name.

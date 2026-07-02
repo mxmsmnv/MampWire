@@ -6,11 +6,12 @@ PROFILE="site-blank"
 MYSQL_CLI="/Applications/MAMP/Library/bin/mysql"
 MYSQL_HOST="127.0.0.1"
 MYSQL_PORT="8889"
+MYSQL_PORT_EXPLICIT="0"
 MYSQL_USER="root"
 MYSQL_PASS="root"
 DOMAIN=""
 DB_NAME=""
-ADMIN_USER="admin"
+ADMIN_USER=""
 ADMIN_EMAIL=""
 ADMIN_PATH=""
 ROOT_DIR=""
@@ -24,14 +25,14 @@ Usage:
 Options:
   --domain DOMAIN        Local MAMP site domain. Inferred from MAMP Pro config when omitted.
   --db-name NAME         Database name. Defaults to a sanitized domain/folder name.
-  --mysql-cli PATH       MAMP mysql binary. Default: /Applications/MAMP/Library/bin/mysql
+  --mysql-cli PATH       MAMP mysql binary. Auto-detected when omitted.
   --mysql-host HOST      Default: 127.0.0.1
   --mysql-port PORT      Default: 8889
   --mysql-user USER      Default: root
   --mysql-pass PASS      Default: root
-  --admin-user USER      Default: admin
+  --admin-user USER      Default: same as database name
   --admin-email EMAIL    Default: admin@DOMAIN
-  --admin-path PATH      Admin URL segment. Default: processwire
+  --admin-path PATH      Admin URL segment. Default: generated from Irish names
   --root PATH            Site document root. Default: current folder.
   --force                Allow installing into a folder that already has ProcessWire files.
   -h, --help             Show help.
@@ -54,7 +55,14 @@ sanitize_db_name() {
 }
 
 random_password() {
-  LC_ALL=C tr -dc 'A-Za-z0-9_@%+=:,.~-' </dev/urandom | head -c "${1:-32}"
+  local length="${1:-32}"
+  local password=""
+  local chunk=""
+  while [ "${#password}" -lt "$length" ]; do
+    chunk="$(LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c "$length" || true)"
+    password="${password}${chunk}"
+  done
+  printf '%s' "${password:0:$length}"
 }
 
 detect_php() {
@@ -68,6 +76,36 @@ detect_php() {
   fi
 
   printf '%s' "${candidates[$((${#candidates[@]} - 1))]}"
+}
+
+detect_mysql_cli() {
+  local candidates=()
+  local path
+  for path in \
+    /Applications/MAMP/Library/bin/mysql \
+    /Applications/MAMP/Library/bin/mysql*/bin/mysql \
+    /Applications/MAMP/Library/bin/mariadb*/bin/mysql
+  do
+    [ -x "$path" ] && candidates+=("$path")
+  done
+
+  if [ "${#candidates[@]}" -eq 0 ]; then
+    fail "MAMP MySQL CLI was not found. Pass --mysql-cli /path/to/mysql."
+  fi
+
+  printf '%s' "${candidates[$((${#candidates[@]} - 1))]}"
+}
+
+generate_irish_admin_path() {
+  local names=(
+    aine aoife brigid caoimhe ciaran conor declan eamon fergus
+    fionn maeve niall niamh oisin orla ronan roisin saoirse
+    seamus siobhan sorcha tadgh
+  )
+  local name="${names[$((RANDOM % ${#names[@]}))]}"
+  local suffix
+  suffix="$(random_password 4 | tr '[:upper:]' '[:lower:]')"
+  printf '%s-%s' "$name" "$suffix"
 }
 
 normalize_path() {
@@ -153,6 +191,7 @@ while [ "$#" -gt 0 ]; do
       ;;
     --mysql-port)
       MYSQL_PORT="${2:-}"
+      MYSQL_PORT_EXPLICIT="1"
       shift 2
       ;;
     --mysql-user)
@@ -193,9 +232,12 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 
-[ -x "$MYSQL_CLI" ] || fail "MySQL CLI not found or not executable: $MYSQL_CLI"
 command -v curl >/dev/null 2>&1 || fail "curl is required."
 command -v unzip >/dev/null 2>&1 || fail "unzip is required."
+
+if [ -z "$MYSQL_CLI" ] || [ ! -x "$MYSQL_CLI" ]; then
+  MYSQL_CLI="$(detect_mysql_cli)"
+fi
 
 ROOT_DIR="${ROOT_DIR:-$(pwd)}"
 ROOT_DIR="$(normalize_path "$ROOT_DIR")" || fail "Site root does not exist: $ROOT_DIR"
@@ -207,11 +249,13 @@ fi
 [ -n "$DOMAIN" ] || fail "Could not infer the MAMP Pro domain for $ROOT_DIR. Pass --domain example.test."
 PHP_BIN="$(detect_php)"
 ADMIN_EMAIL="${ADMIN_EMAIL:-admin@$DOMAIN}"
-ADMIN_PATH="${ADMIN_PATH:-processwire}"
 
 if [ -z "$DB_NAME" ]; then
   DB_NAME="$(sanitize_db_name "$DOMAIN")"
 fi
+
+ADMIN_USER="${ADMIN_USER:-$DB_NAME}"
+ADMIN_PATH="${ADMIN_PATH:-$(generate_irish_admin_path)}"
 
 if ! printf '%s' "$DB_NAME" | grep -Eq '^[A-Za-z0-9_]+$'; then
   fail "Database name may contain only letters, numbers, and underscores."
@@ -230,12 +274,25 @@ if [ "$FORCE" != "1" ]; then
 fi
 
 printf 'Checking MAMP MySQL connection...\n'
-"$MYSQL_CLI" \
+if ! "$MYSQL_CLI" \
   -h"$MYSQL_HOST" \
   -P"$MYSQL_PORT" \
   -u"$MYSQL_USER" \
   -p"$MYSQL_PASS" \
-  -e "SELECT 1;" >/dev/null
+  -e "SELECT 1;" >/dev/null 2>&1; then
+  if [ "$MYSQL_PORT_EXPLICIT" = "0" ] && [ "$MYSQL_PORT" = "8889" ]; then
+    MYSQL_PORT="3306"
+    printf 'MySQL did not answer on 8889; trying 3306...\n'
+    "$MYSQL_CLI" \
+      -h"$MYSQL_HOST" \
+      -P"$MYSQL_PORT" \
+      -u"$MYSQL_USER" \
+      -p"$MYSQL_PASS" \
+      -e "SELECT 1;" >/dev/null
+  else
+    fail "MySQL is not reachable at $MYSQL_HOST:$MYSQL_PORT."
+  fi
+fi
 
 printf 'Creating database %s if needed...\n' "$DB_NAME"
 "$MYSQL_CLI" \

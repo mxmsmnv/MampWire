@@ -29,14 +29,16 @@ The agent manages:
 Use these MAMP defaults unless the user provides different values:
 
 ```txt
-MySQL CLI: /Applications/MAMP/Library/bin/mysql
+MySQL CLI: auto-detect from /Applications/MAMP/Library/bin/mysql and mysql*/bin/mysql
 MySQL host: 127.0.0.1
-MySQL port: 8889
+MySQL port: 8889 by default; if the connection fails, try 3306 before asking the user
 MySQL user: root
 MySQL password: root
 ProcessWire branch: dev
 Site profile: site-blank
-Admin user: admin
+Admin user: same value as the generated database name unless the user provides one
+Admin path: generated from Irish names unless the user provides one
+Generated passwords: lowercase letters, uppercase letters, and digits only
 ```
 
 Detect the MAMP PHP binary from:
@@ -84,7 +86,7 @@ If the installer cannot infer the domain, ask the user for the MAMP domain. This
 - Do not use `--force` unless the user explicitly asks to reinstall over an existing ProcessWire copy.
 - Do not commit `.local/admin.md`.
 - If the folder already contains `site/assets/installed.php`, stop and report that ProcessWire appears installed.
-- If MySQL is not reachable, ask the user to start MAMP servers.
+- If MySQL is not reachable on the default port, try port `3306` before asking the user to start MAMP servers.
 
 ## Reporting Problems
 

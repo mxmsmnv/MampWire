@@ -59,9 +59,22 @@ MySQL host: 127.0.0.1
 MySQL port: read from /Applications/MAMP/tmp/mysql/my.cnf when available
 MySQL user: root
 MySQL password: root
+Apache ports: read from generated MAMP Pro httpd.conf/httpd-ssl.conf
+Nginx ports: read from generated MAMP Pro nginx.conf when available
 ```
 
 Some MAMP Pro setups use MySQL port `3306`. The generated MAMP file `/Applications/MAMP/tmp/mysql/my.cnf` is the best source of truth after MAMP servers have been started. If that file is missing or has no port, the installer falls back to `8889` and then tries `3306`.
+
+For web URLs, generated Apache/Nginx configs are used so non-standard ports like `7443` can be included in `.local/admin.md` when needed:
+
+```txt
+/Library/Application Support/appsolute/MAMP PRO/conf/httpd.conf
+/Library/Application Support/appsolute/MAMP PRO/conf/httpd-ssl.conf
+/Library/Application Support/appsolute/MAMP PRO/conf/nginx.conf
+~/Library/Application Support/appsolute/MAMP PRO/httpd.conf
+~/Library/Application Support/appsolute/MAMP PRO/httpd-ssl.conf
+~/Library/Application Support/appsolute/MAMP PRO/nginx.conf
+```
 
 You can override them:
 

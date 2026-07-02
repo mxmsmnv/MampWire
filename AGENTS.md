@@ -34,6 +34,8 @@ MySQL host: 127.0.0.1
 MySQL port: read from /Applications/MAMP/tmp/mysql/my.cnf when available, otherwise 8889 then 3306
 MySQL user: root
 MySQL password: root
+Apache ports: read from /Library/Application Support/appsolute/MAMP PRO/conf/httpd.conf and httpd-ssl.conf, or the matching files in ~/Library/Application Support/appsolute/MAMP PRO/
+Nginx ports: read from /Library/Application Support/appsolute/MAMP PRO/conf/nginx.conf or ~/Library/Application Support/appsolute/MAMP PRO/nginx.conf when those generated files exist
 ProcessWire branch: dev
 Site profile: site-blank
 Admin user: same value as the generated database name unless the user provides one
@@ -63,6 +65,16 @@ bash /path/to/MampWire/bin/mampwire-install --root "$PWD"
 
 The installer will try to infer the domain from the generated MAMP Pro Apache/Nginx config by matching the current folder to a MAMP document root.
 
+MAMP Pro generated config files are the source of truth after the user starts or restarts servers. Use them instead of guessing ports:
+
+```txt
+Apache HTTP: /Library/Application Support/appsolute/MAMP PRO/conf/httpd.conf
+Apache HTTPS: /Library/Application Support/appsolute/MAMP PRO/conf/httpd-ssl.conf
+Nginx: /Library/Application Support/appsolute/MAMP PRO/conf/nginx.conf
+MySQL: /Applications/MAMP/tmp/mysql/my.cnf
+User copies may also exist under ~/Library/Application Support/appsolute/MAMP PRO/
+```
+
 If the user gives a domain, run:
 
 ```bash
@@ -87,6 +99,7 @@ If the installer cannot infer the domain, ask the user for the MAMP domain. This
 - Do not commit `.local/admin.md`.
 - If the folder already contains `site/assets/installed.php`, stop and report that ProcessWire appears installed.
 - If MySQL is not reachable on the configured port, check `/Applications/MAMP/tmp/mysql/my.cnf`; if no port is available there, try port `3306` before asking the user to start MAMP servers.
+- If generated Apache/Nginx configs are missing or stale, ask the user to start/restart MAMP servers once.
 
 ## Reporting Problems
 

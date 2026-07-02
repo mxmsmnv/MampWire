@@ -16,6 +16,8 @@ ADMIN_EMAIL=""
 ADMIN_PATH=""
 ROOT_DIR=""
 FORCE="0"
+WEB_SCHEME="https"
+WEB_PORT=""
 
 usage() {
   cat <<'USAGE'
@@ -111,6 +113,92 @@ detect_mysql_port() {
       }
     }
   ' "$config"
+}
+
+detect_listen_port() {
+  local config="$1"
+  [ -f "$config" ] || return 1
+  awk '
+    /^[[:space:]]*Listen[[:space:]]+/ {
+      value = $2
+      sub(/^.*:/, "", value)
+      gsub(/[^0-9]/, "", value)
+      if(value != "") {
+        print value
+        exit
+      }
+    }
+  ' "$config"
+}
+
+detect_nginx_listen_port() {
+  local config="$1"
+  [ -f "$config" ] || return 1
+  awk '
+    /^[[:space:]]*listen[[:space:]]+/ {
+      value = $2
+      sub(/^.*:/, "", value)
+      gsub(/[^0-9]/, "", value)
+      if(value != "") {
+        print value
+        exit
+      }
+    }
+  ' "$config"
+}
+
+detect_web_port() {
+  local scheme="${1:-https}"
+  local default_port="443"
+  local configs=()
+  local port=""
+
+  if [ "$scheme" = "http" ]; then
+    default_port="80"
+    configs=(
+      "/Library/Application Support/appsolute/MAMP PRO/conf/httpd.conf"
+      "$HOME/Library/Application Support/appsolute/MAMP PRO/httpd.conf"
+      "/Library/Application Support/appsolute/MAMP PRO/conf/nginx.conf"
+      "$HOME/Library/Application Support/appsolute/MAMP PRO/nginx.conf"
+    )
+  else
+    configs=(
+      "/Library/Application Support/appsolute/MAMP PRO/conf/httpd-ssl.conf"
+      "$HOME/Library/Application Support/appsolute/MAMP PRO/httpd-ssl.conf"
+      "/Library/Application Support/appsolute/MAMP PRO/conf/nginx.conf"
+      "$HOME/Library/Application Support/appsolute/MAMP PRO/nginx.conf"
+    )
+  fi
+
+  local config
+  for config in "${configs[@]}"; do
+    case "$config" in
+      *nginx.conf)
+        port="$(detect_nginx_listen_port "$config" || true)"
+        ;;
+      *)
+        port="$(detect_listen_port "$config" || true)"
+        ;;
+    esac
+    [ -n "$port" ] && break
+  done
+
+  [ -n "$port" ] || port="$default_port"
+  printf '%s' "$port"
+}
+
+build_site_url() {
+  local scheme="$1"
+  local domain="$2"
+  local port="$3"
+  local default_port="443"
+  [ "$scheme" = "http" ] && default_port="80"
+
+  if [ -n "$port" ] && [ "$port" != "$default_port" ]; then
+    printf '%s://%s:%s' "$scheme" "$domain" "$port"
+  else
+    printf '%s://%s' "$scheme" "$domain"
+  fi
 }
 
 generate_irish_admin_path() {
@@ -273,6 +361,8 @@ fi
 [ -n "$DOMAIN" ] || fail "Could not infer the MAMP Pro domain for $ROOT_DIR. Pass --domain example.test."
 PHP_BIN="$(detect_php)"
 ADMIN_EMAIL="${ADMIN_EMAIL:-admin@$DOMAIN}"
+WEB_PORT="$(detect_web_port "$WEB_SCHEME")"
+SITE_URL="$(build_site_url "$WEB_SCHEME" "$DOMAIN" "$WEB_PORT")"
 
 if [ -z "$DB_NAME" ]; then
   DB_NAME="$(sanitize_db_name "$DOMAIN")"
@@ -401,8 +491,8 @@ chmod 700 "$ROOT_DIR/.local"
 cat > "$ROOT_DIR/.local/admin.md" <<MD
 # Local ProcessWire Admin
 
-Site URL: https://$DOMAIN/
-Admin URL: https://$DOMAIN/$ADMIN_PATH/
+Site URL: $SITE_URL/
+Admin URL: $SITE_URL/$ADMIN_PATH/
 
 Admin user: $ADMIN_USER
 Admin password: $ADMIN_PASSWORD
@@ -420,5 +510,5 @@ MD
 chmod 600 "$ROOT_DIR/.local/admin.md"
 
 printf '\nProcessWire dev installed.\n'
-printf 'Admin URL: https://%s/%s/\n' "$DOMAIN" "$ADMIN_PATH"
+printf 'Admin URL: %s/%s/\n' "$SITE_URL" "$ADMIN_PATH"
 printf 'Credentials: %s\n' "$ROOT_DIR/.local/admin.md"

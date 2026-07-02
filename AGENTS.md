@@ -32,8 +32,10 @@ Use these MAMP defaults unless the user provides different values:
 MySQL CLI: auto-detect from /Applications/MAMP/Library/bin/mysql and mysql*/bin/mysql
 MySQL host: 127.0.0.1
 MySQL port: read from /Applications/MAMP/tmp/mysql/my.cnf when available, otherwise 8889 then 3306
-MySQL user: root
-MySQL password: root
+Bootstrap MySQL user: root
+Bootstrap MySQL password: root
+ProcessWire database user: same value as the generated database name unless the user provides one
+ProcessWire database password: generated letters and digits only unless the user provides one
 Apache ports: read from /Library/Application Support/appsolute/MAMP PRO/conf/httpd.conf and httpd-ssl.conf, or the matching files in ~/Library/Application Support/appsolute/MAMP PRO/
 Nginx ports: read from /Library/Application Support/appsolute/MAMP PRO/conf/nginx.conf or ~/Library/Application Support/appsolute/MAMP PRO/nginx.conf when those generated files exist
 ProcessWire branch: dev
@@ -76,6 +78,8 @@ User copies may also exist under ~/Library/Application Support/appsolute/MAMP PR
 ```
 
 The generated ProcessWire admin path must be one Irish given name only, with no random suffix and no separator. Examples: `aine`, `niamh`, `ronan`.
+
+Use the bootstrap MySQL user only to create the database and dedicated database user. Do not install ProcessWire with `root/root` database credentials unless the user explicitly asks. The ProcessWire config should use the dedicated database user and generated database password.
 
 If the user gives a domain, run:
 

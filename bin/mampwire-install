@@ -11,6 +11,8 @@ MYSQL_USER="root"
 MYSQL_PASS="root"
 DOMAIN=""
 DB_NAME=""
+DB_USER=""
+DB_PASS=""
 ADMIN_USER=""
 ADMIN_EMAIL=""
 ADMIN_PATH=""
@@ -32,6 +34,8 @@ Options:
   --mysql-port PORT      Default: 8889
   --mysql-user USER      Default: root
   --mysql-pass PASS      Default: root
+  --db-user USER         ProcessWire database user. Default: same as database name.
+  --db-pass PASS         ProcessWire database password. Default: generated.
   --admin-user USER      Default: same as database name
   --admin-email EMAIL    Default: admin@DOMAIN
   --admin-path PATH      Admin URL segment. Default: one generated Irish name
@@ -304,6 +308,14 @@ while [ "$#" -gt 0 ]; do
       MYSQL_PASS="${2:-}"
       shift 2
       ;;
+    --db-user)
+      DB_USER="${2:-}"
+      shift 2
+      ;;
+    --db-pass)
+      DB_PASS="${2:-}"
+      shift 2
+      ;;
     --admin-user)
       ADMIN_USER="${2:-}"
       shift 2
@@ -366,10 +378,20 @@ if [ -z "$DB_NAME" ]; then
 fi
 
 ADMIN_USER="${ADMIN_USER:-$DB_NAME}"
+DB_USER="${DB_USER:-$DB_NAME}"
+DB_PASS="${DB_PASS:-$(random_password 32)}"
 ADMIN_PATH="${ADMIN_PATH:-$(generate_irish_admin_path)}"
 
 if ! printf '%s' "$DB_NAME" | grep -Eq '^[A-Za-z0-9_]+$'; then
   fail "Database name may contain only letters, numbers, and underscores."
+fi
+
+if ! printf '%s' "$DB_USER" | grep -Eq '^[A-Za-z0-9_]+$'; then
+  fail "Database user may contain only letters, numbers, and underscores."
+fi
+
+if ! printf '%s' "$DB_PASS" | grep -Eq '^[A-Za-z0-9]+$'; then
+  fail "Database password may contain only letters and numbers."
 fi
 
 if [ -f "$ROOT_DIR/site/assets/installed.php" ] && [ "$FORCE" != "1" ]; then
@@ -413,6 +435,21 @@ printf 'Creating database %s if needed...\n' "$DB_NAME"
   -p"$MYSQL_PASS" \
   -e "CREATE DATABASE IF NOT EXISTS \`$DB_NAME\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
+printf 'Creating database user %s if needed...\n' "$DB_USER"
+"$MYSQL_CLI" \
+  -h"$MYSQL_HOST" \
+  -P"$MYSQL_PORT" \
+  -u"$MYSQL_USER" \
+  -p"$MYSQL_PASS" <<SQL
+CREATE USER IF NOT EXISTS '$DB_USER'@'localhost' IDENTIFIED BY '$DB_PASS';
+CREATE USER IF NOT EXISTS '$DB_USER'@'127.0.0.1' IDENTIFIED BY '$DB_PASS';
+ALTER USER '$DB_USER'@'localhost' IDENTIFIED BY '$DB_PASS';
+ALTER USER '$DB_USER'@'127.0.0.1' IDENTIFIED BY '$DB_PASS';
+GRANT ALL PRIVILEGES ON \`$DB_NAME\`.* TO '$DB_USER'@'localhost';
+GRANT ALL PRIVILEGES ON \`$DB_NAME\`.* TO '$DB_USER'@'127.0.0.1';
+FLUSH PRIVILEGES;
+SQL
+
 TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/mampwire.XXXXXX")"
 cleanup_tmp() {
   rm -rf "$TMP_DIR"
@@ -442,8 +479,8 @@ cat > "$CONFIG_FILE" <<PHP
 return [
   'profile' => '$PROFILE',
   'dbName' => '$DB_NAME',
-  'dbUser' => '$MYSQL_USER',
-  'dbPass' => '$MYSQL_PASS',
+  'dbUser' => '$DB_USER',
+  'dbPass' => '$DB_PASS',
   'dbHost' => '$MYSQL_HOST',
   'dbPort' => '$MYSQL_PORT',
   'dbCon' => 'Hostname',
@@ -498,9 +535,10 @@ Admin email: $ADMIN_EMAIL
 Database host: $MYSQL_HOST
 Database port: $MYSQL_PORT
 Database name: $DB_NAME
-Database user: $MYSQL_USER
-Database password: $MYSQL_PASS
+Database user: $DB_USER
+Database password: $DB_PASS
 
+Bootstrap database user: $MYSQL_USER
 PHP binary: $PHP_BIN
 ProcessWire source: $PROCESSWIRE_ARCHIVE_URL
 MD

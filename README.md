@@ -12,6 +12,7 @@ It assumes you create the MAMP Pro site/domain manually, then let Codex or anoth
 - Runs the ProcessWire CLI installer.
 - Saves local admin/database credentials to `.local/admin.md`.
 - Uses the same generated value for the local admin login and database name by default.
+- Creates a dedicated database user for the site instead of installing ProcessWire as `root`.
 - Generates passwords with letters and digits only.
 - Generates the admin path as one Irish given name.
 
@@ -57,11 +58,15 @@ The script defaults to common MAMP settings:
 MySQL CLI: auto-detected from MAMP's bundled mysql binaries
 MySQL host: 127.0.0.1
 MySQL port: read from /Applications/MAMP/tmp/mysql/my.cnf when available
-MySQL user: root
-MySQL password: root
+Bootstrap MySQL user: root
+Bootstrap MySQL password: root
+ProcessWire database user: same as the generated database name
+ProcessWire database password: generated
 Apache ports: read from generated MAMP Pro httpd.conf/httpd-ssl.conf
 Nginx ports: read from generated MAMP Pro nginx.conf when available
 ```
+
+The bootstrap MySQL user is only used to create the database and dedicated site user. ProcessWire itself is installed with the dedicated database user.
 
 Some MAMP Pro setups use MySQL port `3306`. The generated MAMP file `/Applications/MAMP/tmp/mysql/my.cnf` is the best source of truth after MAMP servers have been started. If that file is missing or has no port, the installer falls back to `8889` and then tries `3306`.
 

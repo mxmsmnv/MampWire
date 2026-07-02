@@ -56,12 +56,12 @@ The script defaults to common MAMP settings:
 ```txt
 MySQL CLI: auto-detected from MAMP's bundled mysql binaries
 MySQL host: 127.0.0.1
-MySQL port: 8889
+MySQL port: read from /Applications/MAMP/tmp/mysql/my.cnf when available
 MySQL user: root
 MySQL password: root
 ```
 
-Some MAMP Pro setups use MySQL port `3306`; if `8889` does not answer, the installer tries `3306` automatically.
+Some MAMP Pro setups use MySQL port `3306`. The generated MAMP file `/Applications/MAMP/tmp/mysql/my.cnf` is the best source of truth after MAMP servers have been started. If that file is missing or has no port, the installer falls back to `8889` and then tries `3306`.
 
 You can override them:
 

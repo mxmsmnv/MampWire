@@ -31,7 +31,7 @@ Use these MAMP defaults unless the user provides different values:
 ```txt
 MySQL CLI: auto-detect from /Applications/MAMP/Library/bin/mysql and mysql*/bin/mysql
 MySQL host: 127.0.0.1
-MySQL port: 8889 by default; if the connection fails, try 3306 before asking the user
+MySQL port: read from /Applications/MAMP/tmp/mysql/my.cnf when available, otherwise 8889 then 3306
 MySQL user: root
 MySQL password: root
 ProcessWire branch: dev
@@ -86,7 +86,7 @@ If the installer cannot infer the domain, ask the user for the MAMP domain. This
 - Do not use `--force` unless the user explicitly asks to reinstall over an existing ProcessWire copy.
 - Do not commit `.local/admin.md`.
 - If the folder already contains `site/assets/installed.php`, stop and report that ProcessWire appears installed.
-- If MySQL is not reachable on the default port, try port `3306` before asking the user to start MAMP servers.
+- If MySQL is not reachable on the configured port, check `/Applications/MAMP/tmp/mysql/my.cnf`; if no port is available there, try port `3306` before asking the user to start MAMP servers.
 
 ## Reporting Problems
 

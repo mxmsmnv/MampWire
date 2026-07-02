@@ -96,6 +96,23 @@ detect_mysql_cli() {
   printf '%s' "${candidates[$((${#candidates[@]} - 1))]}"
 }
 
+detect_mysql_port() {
+  local config="/Applications/MAMP/tmp/mysql/my.cnf"
+  [ -f "$config" ] || return 1
+
+  awk '
+    /^[[:space:]]*\[client\][[:space:]]*$/ { in_client = 1; next }
+    /^[[:space:]]*\[/ { in_client = 0 }
+    in_client && /^[[:space:]]*port[[:space:]]*=/ {
+      gsub(/[^0-9]/, "", $0)
+      if($0 != "") {
+        print $0
+        exit
+      }
+    }
+  ' "$config"
+}
+
 generate_irish_admin_path() {
   local names=(
     aine aoife brigid caoimhe ciaran conor declan eamon fergus
@@ -237,6 +254,13 @@ command -v unzip >/dev/null 2>&1 || fail "unzip is required."
 
 if [ -z "$MYSQL_CLI" ] || [ ! -x "$MYSQL_CLI" ]; then
   MYSQL_CLI="$(detect_mysql_cli)"
+fi
+
+if [ "$MYSQL_PORT_EXPLICIT" = "0" ]; then
+  DETECTED_MYSQL_PORT="$(detect_mysql_port || true)"
+  if [ -n "$DETECTED_MYSQL_PORT" ]; then
+    MYSQL_PORT="$DETECTED_MYSQL_PORT"
+  fi
 fi
 
 ROOT_DIR="${ROOT_DIR:-$(pwd)}"

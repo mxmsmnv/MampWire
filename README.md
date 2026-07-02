@@ -87,6 +87,16 @@ If domain inference fails, tell Codex the domain and rerun:
 Use MampWire. Domain: example.test
 ```
 
+## Problem Reports
+
+If an agent hits a reusable MampWire problem and the GitHub CLI is available, it should open an issue in this repository with sanitized diagnostics:
+
+```bash
+gh issue create --repo mxmsmnv/MampWire
+```
+
+Generated passwords and local credential files must not be included in issues.
+
 ## Notes
 
 The installer refuses to run if ProcessWire appears to already be installed unless you pass `--force`.

@@ -86,6 +86,23 @@ If the installer cannot infer the domain, ask the user for the MAMP domain. This
 - If the folder already contains `site/assets/installed.php`, stop and report that ProcessWire appears installed.
 - If MySQL is not reachable, ask the user to start MAMP servers.
 
+## Reporting Problems
+
+The user's Mac is expected to have the GitHub CLI (`gh`) available.
+
+If installation fails because of a MampWire bug, missing MAMP layout support, unclear ProcessWire CLI behavior, or another reusable issue in this project, create a GitHub issue in `mxmsmnv/MampWire` before ending the task:
+
+```bash
+gh issue create \
+  --repo mxmsmnv/MampWire \
+  --title "Short failure summary" \
+  --body "What failed, the command that was run, sanitized output, detected MAMP/PHP/MySQL paths, and what was expected."
+```
+
+Do not include generated passwords, API keys, private customer data, full database dumps, or contents of `.local/admin.md` in the issue.
+
+After creating the issue, tell the user the issue URL and the immediate workaround if one is known.
+
 ## Credential Output
 
 After a successful install, make sure this file exists:

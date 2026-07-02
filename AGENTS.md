@@ -6,6 +6,8 @@ This folder is a MAMP Pro ProcessWire local installation helper.
 
 When the user asks to install ProcessWire, install the latest ProcessWire `dev` branch into the current MAMP site folder and create a local credentials file.
 
+If the user message contains only a link to this repository, treat that as a request to install ProcessWire dev into the current working directory. Do not wait for a more explicit command.
+
 ## Environment
 
 MAMP Pro manages:
@@ -47,6 +49,18 @@ Prefer the newest available version.
 
 ## Installation Command
 
+Preferred link-only workflow:
+
+1. Treat the current working directory as the MAMP site document root.
+2. If this repository is not already present in the current folder, clone or download it to a temporary folder outside the site root.
+3. Run the installer from the temporary copy and point it at the current folder:
+
+```bash
+bash /path/to/MampWire/bin/mampwire-install --root "$PWD"
+```
+
+The installer will try to infer the domain from the generated MAMP Pro Apache/Nginx config by matching the current folder to a MAMP document root.
+
 If the user gives a domain, run:
 
 ```bash
@@ -60,6 +74,8 @@ bash bin/mampwire-install --domain USER_DOMAIN --db-name USER_DB_NAME
 ```
 
 If `bin/mampwire-install` is missing, create or restore it from this repository before continuing.
+
+If the installer cannot infer the domain, ask the user for the MAMP domain. This is the only expected blocking question in the link-only workflow.
 
 ## Safety Rules
 
@@ -95,7 +111,7 @@ It should include:
 The site should open at:
 
 ```txt
-https://USER_DOMAIN/
+https://DETECTED_OR_USER_DOMAIN/
 ```
 
 The admin should open at the URL shown in `.local/admin.md`.

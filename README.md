@@ -28,6 +28,12 @@ Open a terminal in the MAMP site folder and run:
 bash bin/mampwire-install --domain example.test
 ```
 
+If the site was already created in MAMP Pro and the servers have been started at least once, MampWire can usually infer the domain from the generated MAMP Pro config:
+
+```bash
+bash bin/mampwire-install
+```
+
 Optional database name:
 
 ```bash
@@ -65,15 +71,21 @@ bash bin/mampwire-install \
 
 1. Create a site in MAMP Pro.
 2. Point the site document root to your project folder.
-3. Copy or clone this repository into that folder.
-4. Open the folder in Codex.
-5. Ask Codex:
+3. Start/restart MAMP servers once so MAMP Pro writes its generated config.
+4. Open the site folder in Codex.
+5. Send Codex only this repository URL:
 
 ```txt
-Install ProcessWire dev using MampWire. Domain: example.test
+https://github.com/mxmsmnv/MampWire
 ```
 
-Codex should read `AGENTS.md` and run the installer.
+Codex should clone/read MampWire, run the installer against the current folder, infer the domain from MAMP Pro, and return the generated credentials in chat.
+
+If domain inference fails, tell Codex the domain and rerun:
+
+```txt
+Use MampWire. Domain: example.test
+```
 
 ## Notes
 

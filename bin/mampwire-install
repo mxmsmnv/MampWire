@@ -34,7 +34,7 @@ Options:
   --mysql-pass PASS      Default: root
   --admin-user USER      Default: same as database name
   --admin-email EMAIL    Default: admin@DOMAIN
-  --admin-path PATH      Admin URL segment. Default: generated from Irish names
+  --admin-path PATH      Admin URL segment. Default: one generated Irish name
   --root PATH            Site document root. Default: current folder.
   --force                Allow installing into a folder that already has ProcessWire files.
   -h, --help             Show help.
@@ -207,10 +207,7 @@ generate_irish_admin_path() {
     fionn maeve niall niamh oisin orla ronan roisin saoirse
     seamus siobhan sorcha tadgh
   )
-  local name="${names[$((RANDOM % ${#names[@]}))]}"
-  local suffix
-  suffix="$(random_password 4 | tr '[:upper:]' '[:lower:]')"
-  printf '%s-%s' "$name" "$suffix"
+  printf '%s' "${names[$((RANDOM % ${#names[@]}))]}"
 }
 
 normalize_path() {

@@ -39,7 +39,7 @@ Nginx ports: read from /Library/Application Support/appsolute/MAMP PRO/conf/ngin
 ProcessWire branch: dev
 Site profile: site-blank
 Admin user: same value as the generated database name unless the user provides one
-Admin path: generated from Irish names unless the user provides one
+Admin path: exactly one generated Irish given name unless the user provides one
 Generated passwords: lowercase letters, uppercase letters, and digits only
 ```
 
@@ -74,6 +74,8 @@ Nginx: /Library/Application Support/appsolute/MAMP PRO/conf/nginx.conf
 MySQL: /Applications/MAMP/tmp/mysql/my.cnf
 User copies may also exist under ~/Library/Application Support/appsolute/MAMP PRO/
 ```
+
+The generated ProcessWire admin path must be one Irish given name only, with no random suffix and no separator. Examples: `aine`, `niamh`, `ronan`.
 
 If the user gives a domain, run:
 

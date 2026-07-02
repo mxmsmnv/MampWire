@@ -1,0 +1,9 @@
+.DS_Store
+.local/
+site/assets/cache/
+site/assets/logs/
+site/assets/sessions/
+site/assets/backups/
+site/assets/files/
+*.sql
+*.sql.gz

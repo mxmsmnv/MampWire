@@ -1,0 +1,279 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+PROCESSWIRE_ARCHIVE_URL="https://github.com/processwire/processwire/archive/dev.zip"
+PROFILE="site-blank"
+MYSQL_CLI="/Applications/MAMP/Library/bin/mysql"
+MYSQL_HOST="127.0.0.1"
+MYSQL_PORT="8889"
+MYSQL_USER="root"
+MYSQL_PASS="root"
+DOMAIN=""
+DB_NAME=""
+ADMIN_USER="admin"
+ADMIN_EMAIL=""
+ADMIN_PATH=""
+FORCE="0"
+
+usage() {
+  cat <<'USAGE'
+Usage:
+  bash bin/mampwire-install --domain example.test [options]
+
+Options:
+  --domain DOMAIN        Local MAMP site domain. Required.
+  --db-name NAME         Database name. Defaults to a sanitized domain/folder name.
+  --mysql-cli PATH       MAMP mysql binary. Default: /Applications/MAMP/Library/bin/mysql
+  --mysql-host HOST      Default: 127.0.0.1
+  --mysql-port PORT      Default: 8889
+  --mysql-user USER      Default: root
+  --mysql-pass PASS      Default: root
+  --admin-user USER      Default: admin
+  --admin-email EMAIL    Default: admin@DOMAIN
+  --admin-path PATH      Admin URL segment. Default: processwire
+  --force                Allow installing into a folder that already has ProcessWire files.
+  -h, --help             Show help.
+USAGE
+}
+
+fail() {
+  printf 'MampWire error: %s\n' "$1" >&2
+  exit 1
+}
+
+sanitize_db_name() {
+  local value="$1"
+  value="$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')"
+  value="$(printf '%s' "$value" | sed -E 's/[^a-z0-9_]+/_/g; s/^_+//; s/_+$//; s/_+/_/g')"
+  if [ -z "$value" ]; then
+    value="processwire"
+  fi
+  printf 'pw_%.45s' "$value"
+}
+
+random_password() {
+  LC_ALL=C tr -dc 'A-Za-z0-9_@%+=:,.~-' </dev/urandom | head -c "${1:-32}"
+}
+
+detect_php() {
+  local candidates=()
+  while IFS= read -r path; do
+    candidates+=("$path")
+  done < <(find /Applications/MAMP/bin/php -path '*/bin/php' -type f 2>/dev/null | sort)
+
+  if [ "${#candidates[@]}" -eq 0 ]; then
+    fail "MAMP PHP binary was not found in /Applications/MAMP/bin/php."
+  fi
+
+  printf '%s' "${candidates[$((${#candidates[@]} - 1))]}"
+}
+
+copy_processwire_files() {
+  local source_dir="$1"
+  local target_dir="$2"
+
+  if command -v rsync >/dev/null 2>&1; then
+    rsync -a "$source_dir"/ "$target_dir"/
+  else
+    (cd "$source_dir" && tar cf - .) | (cd "$target_dir" && tar xf -)
+  fi
+}
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --domain)
+      DOMAIN="${2:-}"
+      shift 2
+      ;;
+    --db-name)
+      DB_NAME="${2:-}"
+      shift 2
+      ;;
+    --mysql-cli)
+      MYSQL_CLI="${2:-}"
+      shift 2
+      ;;
+    --mysql-host)
+      MYSQL_HOST="${2:-}"
+      shift 2
+      ;;
+    --mysql-port)
+      MYSQL_PORT="${2:-}"
+      shift 2
+      ;;
+    --mysql-user)
+      MYSQL_USER="${2:-}"
+      shift 2
+      ;;
+    --mysql-pass)
+      MYSQL_PASS="${2:-}"
+      shift 2
+      ;;
+    --admin-user)
+      ADMIN_USER="${2:-}"
+      shift 2
+      ;;
+    --admin-email)
+      ADMIN_EMAIL="${2:-}"
+      shift 2
+      ;;
+    --admin-path)
+      ADMIN_PATH="${2:-}"
+      shift 2
+      ;;
+    --force)
+      FORCE="1"
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      fail "Unknown option: $1"
+      ;;
+  esac
+done
+
+[ -n "$DOMAIN" ] || fail "Pass --domain example.test."
+[ -x "$MYSQL_CLI" ] || fail "MySQL CLI not found or not executable: $MYSQL_CLI"
+command -v curl >/dev/null 2>&1 || fail "curl is required."
+command -v unzip >/dev/null 2>&1 || fail "unzip is required."
+
+ROOT_DIR="$(pwd)"
+PHP_BIN="$(detect_php)"
+ADMIN_EMAIL="${ADMIN_EMAIL:-admin@$DOMAIN}"
+ADMIN_PATH="${ADMIN_PATH:-processwire}"
+
+if [ -z "$DB_NAME" ]; then
+  DB_NAME="$(sanitize_db_name "$DOMAIN")"
+fi
+
+if ! printf '%s' "$DB_NAME" | grep -Eq '^[A-Za-z0-9_]+$'; then
+  fail "Database name may contain only letters, numbers, and underscores."
+fi
+
+if [ -f "$ROOT_DIR/site/assets/installed.php" ] && [ "$FORCE" != "1" ]; then
+  fail "ProcessWire appears to be installed already. Use --force only if you want to reinstall."
+fi
+
+if [ "$FORCE" != "1" ]; then
+  for item in wire index.php install.php site; do
+    if [ -e "$ROOT_DIR/$item" ]; then
+      fail "Found existing $item. Use --force only if you want to install over existing files."
+    fi
+  done
+fi
+
+printf 'Checking MAMP MySQL connection...\n'
+"$MYSQL_CLI" \
+  -h"$MYSQL_HOST" \
+  -P"$MYSQL_PORT" \
+  -u"$MYSQL_USER" \
+  -p"$MYSQL_PASS" \
+  -e "SELECT 1;" >/dev/null
+
+printf 'Creating database %s if needed...\n' "$DB_NAME"
+"$MYSQL_CLI" \
+  -h"$MYSQL_HOST" \
+  -P"$MYSQL_PORT" \
+  -u"$MYSQL_USER" \
+  -p"$MYSQL_PASS" \
+  -e "CREATE DATABASE IF NOT EXISTS \`$DB_NAME\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+
+TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/mampwire.XXXXXX")"
+cleanup_tmp() {
+  rm -rf "$TMP_DIR"
+}
+trap cleanup_tmp EXIT
+
+printf 'Downloading ProcessWire dev...\n'
+curl -fsSL "$PROCESSWIRE_ARCHIVE_URL" -o "$TMP_DIR/processwire-dev.zip"
+
+printf 'Extracting ProcessWire...\n'
+unzip -q "$TMP_DIR/processwire-dev.zip" -d "$TMP_DIR/extract"
+SOURCE_DIR="$(find "$TMP_DIR/extract" -mindepth 1 -maxdepth 1 -type d | head -n 1)"
+[ -n "$SOURCE_DIR" ] || fail "Could not find extracted ProcessWire directory."
+
+if ! grep -q 'class InstallerCli' "$SOURCE_DIR/install.php"; then
+  fail "Downloaded ProcessWire dev installer does not include InstallerCli."
+fi
+
+printf 'Copying ProcessWire files into %s...\n' "$ROOT_DIR"
+copy_processwire_files "$SOURCE_DIR" "$ROOT_DIR"
+
+ADMIN_PASSWORD="$(random_password 32)"
+CONFIG_FILE="$ROOT_DIR/install-config.php"
+
+cat > "$CONFIG_FILE" <<PHP
+<?php
+return [
+  'profile' => '$PROFILE',
+  'dbName' => '$DB_NAME',
+  'dbUser' => '$MYSQL_USER',
+  'dbPass' => '$MYSQL_PASS',
+  'dbHost' => '$MYSQL_HOST',
+  'dbPort' => '$MYSQL_PORT',
+  'dbCon' => 'Hostname',
+  'dbEngine' => 'InnoDB',
+  'dbCharset' => 'utf8mb4',
+  'timezone' => 'UTC',
+  'httpHosts' => ['$DOMAIN'],
+  'debugMode' => 1,
+  'admin_name' => '$ADMIN_PATH',
+  'username' => '$ADMIN_USER',
+  'useremail' => '$ADMIN_EMAIL',
+  'userpass' => '$ADMIN_PASSWORD',
+  'userpass_confirm' => '$ADMIN_PASSWORD',
+];
+PHP
+chmod 600 "$CONFIG_FILE"
+
+printf 'Running ProcessWire CLI installer...\n'
+set +e
+INSTALL_OUTPUT="$("$PHP_BIN" install.php --config install-config.php 2>&1)"
+INSTALL_CODE="$?"
+set -e
+rm -f "$CONFIG_FILE"
+
+if [ "$INSTALL_CODE" -ne 0 ]; then
+  printf '%s\n' "$INSTALL_OUTPUT" >&2
+  fail "ProcessWire CLI installer failed."
+fi
+
+printf 'Cleaning installer files...\n'
+set +e
+CLEANUP_OUTPUT="$("$PHP_BIN" install.php --cleanup 2>&1)"
+CLEANUP_CODE="$?"
+set -e
+if [ "$CLEANUP_CODE" -ne 0 ] && [ -f "$ROOT_DIR/install.php" ]; then
+  printf '%s\n' "$CLEANUP_OUTPUT" >&2
+  fail "ProcessWire cleanup failed."
+fi
+
+mkdir -p "$ROOT_DIR/.local"
+chmod 700 "$ROOT_DIR/.local"
+cat > "$ROOT_DIR/.local/admin.md" <<MD
+# Local ProcessWire Admin
+
+Site URL: https://$DOMAIN/
+Admin URL: https://$DOMAIN/$ADMIN_PATH/
+
+Admin user: $ADMIN_USER
+Admin password: $ADMIN_PASSWORD
+Admin email: $ADMIN_EMAIL
+
+Database host: $MYSQL_HOST
+Database port: $MYSQL_PORT
+Database name: $DB_NAME
+Database user: $MYSQL_USER
+Database password: $MYSQL_PASS
+
+PHP binary: $PHP_BIN
+ProcessWire source: $PROCESSWIRE_ARCHIVE_URL
+MD
+chmod 600 "$ROOT_DIR/.local/admin.md"
+
+printf '\nProcessWire dev installed.\n'
+printf 'Admin URL: https://%s/%s/\n' "$DOMAIN" "$ADMIN_PATH"
+printf 'Credentials: %s\n' "$ROOT_DIR/.local/admin.md"

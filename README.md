@@ -121,6 +121,12 @@ gh issue create --repo mxmsmnv/MampWire
 
 Generated passwords and local credential files must not be included in issues.
 
+## Author
+
+Maxim Semenov  
+maxim@smnv.org  
+https://smnv.org
+
 ## Notes
 
 The installer refuses to run if ProcessWire appears to already be installed unless you pass `--force`.

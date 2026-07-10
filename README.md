@@ -4,6 +4,37 @@ MampWire is a small local installer recipe for creating ProcessWire development 
 
 It assumes you create the MAMP Pro site/domain manually, then let Codex or another coding agent install ProcessWire into that site's document root.
 
+## How To Use
+
+1. Create a new site in MAMP Pro.
+2. Set the site's document root to an empty local folder, for example:
+
+```txt
+/Users/mas/Sites/example.test
+```
+
+3. Set the local domain in MAMP Pro, for example:
+
+```txt
+example.test
+```
+
+4. Start or restart MAMP servers once so MAMP Pro writes its generated config files.
+5. Open the site folder in Codex.
+6. Send Codex this message:
+
+```txt
+Install https://github.com/mxmsmnv/MampWire
+```
+
+Codex should read MampWire, install ProcessWire `dev` into the current folder, create the database and dedicated database user, then return the admin credentials in chat.
+
+The same credentials are saved locally:
+
+```txt
+.local/admin.md
+```
+
 ## What It Does
 
 - Uses the ProcessWire `dev` branch.

@@ -2,7 +2,7 @@
 
 MampWire is a small local installer recipe for creating ProcessWire development sites inside MAMP Pro.
 
-It assumes you create the MAMP Pro site/domain manually, then let Codex or another coding agent install ProcessWire into that site's document root.
+It assumes you create the MAMP Pro site/domain manually, then let ChatGPT Work or another coding agent install ProcessWire into that site's document root.
 
 ## How To Use
 
@@ -20,14 +20,14 @@ example.test
 ```
 
 4. Start or restart MAMP servers once so MAMP Pro writes its generated config files.
-5. Open the site folder in Codex.
-6. Send Codex this message:
+5. Open the site folder in ChatGPT Work.
+6. Send ChatGPT Work this message:
 
 ```txt
 Install https://github.com/mxmsmnv/MampWire
 ```
 
-Codex should read MampWire, install ProcessWire `dev` into the current folder, create the database and dedicated database user, then return the admin credentials in chat.
+ChatGPT Work should read MampWire, install ProcessWire `dev` into the current folder, create the database and dedicated database user, then return the admin credentials in chat.
 
 The same credentials are saved locally:
 
@@ -127,16 +127,16 @@ bash bin/mampwire-install \
 1. Create a site in MAMP Pro.
 2. Point the site document root to your project folder.
 3. Start/restart MAMP servers once so MAMP Pro writes its generated config.
-4. Open the site folder in Codex.
-5. Send Codex only this repository URL:
+4. Open the site folder in ChatGPT Work.
+5. Send ChatGPT Work only this repository URL:
 
 ```txt
 https://github.com/mxmsmnv/MampWire
 ```
 
-Codex should clone/read MampWire, run the installer against the current folder, infer the domain from MAMP Pro, and return the generated credentials in chat.
+ChatGPT Work should clone/read MampWire, run the installer against the current folder, infer the domain from MAMP Pro, and return the generated credentials in chat.
 
-If domain inference fails, tell Codex the domain and rerun:
+If domain inference fails, tell ChatGPT Work the domain and rerun:
 
 ```txt
 Use MampWire. Domain: example.test
